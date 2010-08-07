@@ -1,0 +1,64 @@
+= Meddle
+
+A less resource-heavy way to do realistic regression tests (and
+eventually load tests) than controlling an actual web browser 
+a la watir.  
+
+* Interact with your web site using Firefox.  
+* Capture the requests sent with Tamper Data, and export as XML
+* Replay them from the command line
+ - with realistic timing
+ - with SSL support
+ - with a 'rewrite' step that lets you programmatically change the
+   request data before sending it (e.g. to switch hostnames from
+   production to test, or vice versa)
+ - using the single-threaded low-overhead goodness of EventMachine
+
+== Usage
+
+See example.rb
+
+
+== BUGS/ISSUES/TODO
+
+1) This is a Saturday afternoon hack and I'm still playing with it.
+It would be folish for you to rely on APIs which may change at a
+moment's notice.
+
+
+2) The current version has *no support for HTTP
+keep-alives/persistent connections*, nor for HTTP chunking.  This
+will probably happen in time (you could make it more probable by
+sending me a patch) but right now if that's what you need to test,
+this is not the tool to test with.
+
+
+== Other Tools
+
+1) what about watir?
+
+Tried it, didn't like it ;-)
+
+More seriously, it doesn't do the same job.  Meddle replays real
+human-generated sessions: watir simulates them.  Meddle runs from the
+command line and doesn't need a web browser to be installed or
+running.  Eventually, if I can make it run fast enough (or if it's run
+against sites slow enough ;-), it will be useful for load testing.
+
+2) What about Mechanize?
+
+Again, it doesn't do the same job.  Mechanize will do you for
+functional testing ("did I get this page when I clicked that button or
+followed the link?") but the headers it sends aren't the headers your
+browser sent, and it doesn't download images, and so on and so forth.
+
+3) What about WWW::TamperData (on CPAN)?
+
+That's actually pretty similar to what this does.  But it's in Perl
+and I wanted one in Ruby.
+
+Also, as of v 0.08 it sends out all the requests at once and pays no
+heed to the timings in the XML.  This is fine for a single shot but
+probably not so hot for simulating actual user load
+
+
