@@ -153,9 +153,12 @@ module Meddle
     end
     def replay
       orig_start_time=@transactions[0].start_time
-      last_tx=@transactions[-1]
+      orig_end_time=@transactions[-1].start_time
       start=Time.now
       EventMachine::run do
+        EM.add_timer(orig_end_time-orig_start_time+5) do 
+          EM.stop
+        end
         @transactions.each do |tx|
           if yield(tx) then
             offset=tx.start_time-orig_start_time
@@ -163,7 +166,7 @@ module Meddle
               EM.next_tick do # not sure if this line necessary, but ...
                 url=URI.parse(tx.request.uri)
                 EM.connect url.host,url.port,EmConnect,:transaction=>tx,
-                :start=>start,:offset=>offset,:stop=>(tx==last_tx)
+                :start=>start,:offset=>offset
               end
             end
           end
