@@ -1,0 +1,47 @@
+1) remove the EM.run call from #replay, so that multiple Sessions can be
+added to the same eventmachine.  
+
+2) figure out how to add them with a start delay to simulate multiple
+users arriving at different times (can we just add a timer?)
+
+3) track connections so we can stop when all connections come back (or
+time out)
+- track them where?
+- if we have multiple sessions running at once, it would be bad (I
+   assume it would be bad) to call EM.stop after the first
+
+4) test that the response is what we expect.  Probably we add
+EmConnect#test_response and then allow the user to subclass EmConnect
+with their desired test (and pass the subclass to #replay, obviously)
+
+The original XML doesn't log body contents, so we can't compare
+against body text, just headers.
+
+A default test might be to compare http status, content-type, document
+title - should be sufficient to detect real brokenness
+
+5) There is a limit on the number of timers available
+set_max_timers(ct)
+
+"Sets the maximum number of timers and periodic timers that may be
+outstanding at any given time. You only need to call set_max_timers if
+you need more than the default number of timers, which on most
+platforms is 1000. Call this method before calling EventMachine#run."
+
+ /* Allow a user to increase the maximum number of outstanding timers.
+  * If this gets "too high" (a metric that is of course platform dependent),
+  * bad things will happen like performance problems and possible overuse
+  * of memory.
+  * The actual timer mechanism is very efficient so it's hard to know what
+  * the practical max, but 100,000 shouldn't be too problematical.
+  */
+
+100k timers ... we could shove requests onto a queue and create EM
+timers when they're dequeued.  If a request takes n seconds, this
+limits us to 100k/n requests per second - let's guess ~ 5 seconds a
+request at load, we are hitting a limit at 20k requests/second/process
+which is probably plenty
+
+6) I rather suspect our response parsing is dog-slow, and for load
+tests we should replace it with something simpler.  Note that http
+headers are all US-ASCII - we don't need to worry about utf-8 or anything
