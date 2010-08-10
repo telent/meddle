@@ -20,7 +20,7 @@ class Meddle::Session
     doc=File.open(file) do |f|
       Nokogiri::XML(f)
     end
-    txs=doc.root.css('tdRequest').map {|x| Transaction.from_xml(x)}
+    txs=doc.root.css('tdRequest').map {|x| Meddle::Transaction.from_xml(x)}
     @transactions=txs.map { |tx| (yield tx) || nil }.reject(&:nil?)
   end
 end

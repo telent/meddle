@@ -1,11 +1,7 @@
 
-# extends EM::Queue with a #peek method
-
-class Meddle::Queue < EM::Queue
+class Meddle::Queue < Array
   def peek
-    v=self.pop
-    self.push(v)
-    v
+    self[0]
   end
 end
 

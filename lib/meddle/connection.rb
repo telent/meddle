@@ -11,9 +11,9 @@
 
 class Meddle::Connection < EM::Connection
 
-  def self.start(queue,options)
+  def self.start(queue,options={})
     uri=URI.parse(queue.peek[1].request.uri)
-    EM.connect(uri.host,uri.port,self,:queue=>queue,*options)
+    EM.connect(uri.host,uri.port,self,options.merge(:queue=>queue))
   end
 
   def initialize *args
@@ -26,7 +26,7 @@ class Meddle::Connection < EM::Connection
   
   def post_init
     begin
-      uri=@queue.peek[1].request.uri 
+      uri=URI.parse(@queue.peek[1].request.uri )
       if uri.scheme.upcase == "HTTPS" then
         start_tls
       end
@@ -73,6 +73,7 @@ class Meddle::Connection < EM::Connection
     # XXX for now we are hardcoding http version 1.0 so no bugger
     # gives us chunked bodies that we're not expecting.  This needs
     # fixed
+    warn "#{r.method.upcase} #{p} HTTP/1.0\r\n" 
     send_data "#{r.method.upcase} #{p} HTTP/1.0\r\n" 
     h=r.header
 
@@ -109,7 +110,7 @@ class Meddle::Connection < EM::Connection
   end
 
   def receive_data(data)
-    if @state=:waiting then @state=:rx_header end
+    if @state==:waiting then @state=:rx_header end
     @data += data
     case @state
     when :rx_header then
@@ -150,8 +151,8 @@ class Meddle::Connection < EM::Connection
     run_time,tx=@queue.peek
     if tx then
       EM.add_timer (run_time-Time.now) {
-        Connection.start(queue,
-                         :persistent_request_timeout=>@persistent_request_timeout)
+        Meddle::Connection.start(@queue,
+                                 :persistent_request_timeout=>@persistent_request_timeout)
       }
     end
   end

@@ -4,20 +4,22 @@ class Meddle::Agent
     @sessions.push [session,delay]
   end
 
-  def initialize(options)
+  def initialize(options={})
     @connections_per_host=options[:connections_per_host] || 2
     @sessions=[]
     yield(self)
     now=Time.now
     @sessions.each do |sess,delay|
-      queue=Hash.new {|hash,k| hash[k]=[] }
+      queue=Hash.new {|hash,k| hash[k]=Meddle::Queue.new }
       sess_orig_start=sess[0].start_time
       sess.each do |tx|
         host=URI.parse(tx.request.uri).host
-        queue[host] << [now+tx.start_time-sess[0].start_time+delay,tx]
+        queue[host].push [now+(tx.start_time-sess[0].start_time)+delay,tx]
       end
-      @connections_per_host.times do |c|
-        Connection.start(queue)
+      queue.keys.each do |host|
+        @connections_per_host.times do |c|
+          Meddle::Connection.start(queue[host])
+        end
       end
     end      
   end
