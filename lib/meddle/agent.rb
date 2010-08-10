@@ -1,7 +1,6 @@
 
-
 class Meddle::Agent
-  def add_session(session,delay)
+  def add_session(session,delay=0)
     @sessions.push [session,delay]
   end
 
