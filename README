@@ -21,16 +21,11 @@ See example.rb
 
 == BUGS/ISSUES/TODO
 
-1) This is a Saturday afternoon hack and I'm still playing with it.
-It would be folish for you to rely on APIs which may change at a
-moment's notice.
+0) It doesn't work.  Sorry.  It's in the middle of the major breakage
+stage between "proof-of-concept" and "useful" and the only reason it's
+on github right now is as an off-site backup.
 
-
-2) The current version has *no support for HTTP
-keep-alives/persistent connections*, nor for HTTP chunking.  This
-will probably happen in time (you could make it more probable by
-sending me a patch) but right now if that's what you need to test,
-this is not the tool to test with.
+1) See the TODO file for more rapidly changing detail
 
 
 == Other Tools
