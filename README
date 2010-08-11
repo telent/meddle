@@ -13,6 +13,8 @@ a la watir.
    request data before sending it (e.g. to switch hostnames from
    production to test, or vice versa)
  - using the single-threaded low-overhead goodness of EventMachine
+ - using "approximately real" rules for number of parallel requests
+   per hostname (default 2), persistent connections, and timeout values
 
 == Usage
 

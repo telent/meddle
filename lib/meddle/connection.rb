@@ -89,16 +89,15 @@ class Meddle::Connection < EM::Connection
     # XML has caused it to change length
     h["Content-Length"]=[r.body.bytesize.to_s]
 
-    # we disable keepalives even if the orginal session was using
-    # them.  We will fix this at some point
-    h["Connection"]=["close"]
+    # it might be nice to have a configuration option that would 
+    # disable persistent connections
+#    h["Connection"]=["close"]
     h.each do |k,v|
       v.each do |v|
         send_data "#{k}: #{v}\r\n"
       end
     end
     send_data "\r\n"
-
     if(["POST","PUT"].member?(r.method)) then
       send_data r.body
       end
@@ -147,28 +146,35 @@ class Meddle::Connection < EM::Connection
         else
           # if the header is missing altogether then body length is unknown
           # and we just have to keep going until the peer hangs up
-          @state=:recv_body 
+          @state=:rx_body 
+          # if we got the header and body in one call to receive_data,
+          # go round again to make sure the body gets processed
+          if(@data.bytesize > 0)
+            return receive_data('')
+          end
         end
       end
-    when :recv_body then
-      if l=@header['Content-Length'] then
-        if l[0] && @data.bytesize >= l[0].to_i then
-          process_body(@data)
-          @state=:idle
-          @tx=nil
-        end
+    when :rx_body then
+      l=@header['Content-Length']
+      if l[0] && (@data.bytesize >= l[0].to_i) then
+        process_body(@data)
+        @state=:idle
+        @tx=nil
+        self.send_next_request
       end
     when :idle then
       u="unknown"
       if @tx then u=@tx.request.uri end
-      warn "#{u} #{@header['Content-Encoding']} received #{data} while in :idle state, what gives?"
+      warn "#{u} received #{data} while in :idle state, what gives?"
     when :tls then
-      warn "Received data while in :tls, don't know if this is supposed to hapen"
+      warn "Received data while in :tls - is this supposed to happen?"
+    else
+      warn "Unhandled case #{@state}"
     end
   end
   
   def unbind
-    if @state == :recv_body then
+    if @state == :rx_body then
       process_body(@data)
       @state=:idle
     end
