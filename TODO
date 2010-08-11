@@ -26,6 +26,7 @@ outstanding at any given time. You only need to call set_max_timers if
 you need more than the default number of timers, which on most
 platforms is 1000. Call this method before calling EventMachine#run."
 
+From the source:
  /* Allow a user to increase the maximum number of outstanding timers.
   * If this gets "too high" (a metric that is of course platform dependent),
   * bad things will happen like performance problems and possible overuse
@@ -39,7 +40,7 @@ Between requests each connection requires a single timer.  So if we
 are hitting a single host our timer use is basically 2x the number of
 sessions.  If 1000 is a bottleneck before CPU becomes an issue,
 100,000 probably won't be, but we should know how many we're going to
-need and raise the limit if we need to
+need and advise the user if it needs raising
 
 6) I rather suspect our response parsing is dog-slow, and for load
 tests we should replace it with something simpler.  Note that http

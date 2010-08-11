@@ -21,9 +21,9 @@ See example.rb
 
 == BUGS/ISSUES/TODO
 
-0) It doesn't work.  Sorry.  It's in the middle of the major breakage
-stage between "proof-of-concept" and "useful" and the only reason it's
-on github right now is as an off-site backup.
+0) It's pre-pre-pre alpha in a big way.  I put it on github in the
+expectation that it will *someday* be generally useful, not as an
+advertisement that it is currently.  Because it's not.
 
 1) See the TODO file for more rapidly changing detail
 
