@@ -13,10 +13,9 @@
 The original XML doesn't log body contents, so we can't compare
 against body text, just headers.
 
-A default test might be to compare http status, content-type, document
-title - should be sufficient to detect real brokenness
-
-There needs to be a sane way to override that
+A default test might be to compare http status and content-type, which
+should be sufficient to detect real brokenness.  There needs to be a
+sane way to override that
 
 5) There is a limit on the number of timers available
 set_max_timers(ct).  
@@ -51,8 +50,25 @@ always know the full set of requests before EM.run is called?  Perhaps
 we want to sustain load for ten or twenty minutes to eliminate "ramp
 up" effects on a server: do our data structures allow that?
 
-
 9) if the original session asked for gzip content-encoding and the
 server provided it, we should probably do the same (and do).  However
 it would be good to provide tools for anyone testing body content to
 know that the *correct* gzipped content had been delivered
+
+10) socket options - try to get approximately the same TCP behaviour as the 
+orginal requests would have had
+
+11) we send an http/1.0 request but handle the response mostly as if it were
+1.1 (chunking excepted) - e.g. we default to persistent connects.  
+
+12) It would be instructve to know whether real browsers always open
+two sockets/host or just one - when do they decide the second pipe is needed?
+
+13) we don't have the standard "block all connections while
+downloading a script" behaviour, though maybe that's not a real big
+deal as the delays in the original request will simulate it more or
+less - until the site gets slow.
+
+14) queue.pop raises error on empty, which get_next_request is not
+expecting.  return nil?
+
