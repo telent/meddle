@@ -28,13 +28,20 @@ class Meddle::Connection < EM::Connection
     begin
       uri=URI.parse(@queue.peek[1].request.uri )
       if uri.scheme.upcase == "HTTPS" then
+        @state=:tls
         start_tls
+      else
+        send_next_request
       end
-      send_next_request
     rescue Exception => e
       warn e
       raise e
     end
+  end
+
+  def ssl_handshake_completed
+    @state=:idle
+    send_next_request
   end
   
   def send_next_request
