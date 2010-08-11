@@ -80,7 +80,6 @@ class Meddle::Connection < EM::Connection
     # XXX for now we are hardcoding http version 1.0 so no bugger
     # gives us chunked bodies that we're not expecting.  This needs
     # fixed
-    warn "#{r.method.upcase} #{p} HTTP/1.0\r\n" 
     send_data "#{r.method.upcase} #{p} HTTP/1.0\r\n" 
     h=r.header
 
