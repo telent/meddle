@@ -125,8 +125,9 @@ class Meddle::Connection < EM::Connection
       # no body?  must check
       end_headers=@data.index("\r\n\r\n") 
       if end_headers then 
-        header_text=@data.slice(0,hdrs_end)
-        @data=@data.slice(hdrs_end+2)
+        header_text=@data.slice(0,end_headers)
+        @data=@data.slice(end_headers+4,@data.length)
+        status=[]
         StringIO.open(header_text,"r") do |fin|
           status=fin.readline.chomp.split(/ /,3) 
           while (line=fin.gets) 
