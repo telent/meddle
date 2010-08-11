@@ -108,12 +108,13 @@ class Meddle::Connection < EM::Connection
     @state=:waiting
   end
 
-  def process_body(data)
+  def process_body(body)
     warn "Received #{body.bytesize} octets of body content"
   end
 
-  def process_header(data)
-    warn "#{@tx.request.method} #{@tx.request.uri} #{status[1]} #{headers['Content-Length'][0] or "???"}"
+  def process_header(header)
+    status=header[:http_status]
+    warn "#{@tx.request.method} #{@tx.request.uri} #{status[1]} #{header['Content-Length'][0] or "<length unknown>"}"
   end
 
   def receive_data(data)
