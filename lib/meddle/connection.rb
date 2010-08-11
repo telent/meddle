@@ -135,24 +135,43 @@ class Meddle::Connection < EM::Connection
             v and @header[k] << v.chomp.strip
           end
         end
-        header[:http_status]=status
-        process_header(header)
+        @header[:http_status]=status
+        process_header(@header)
         # XXX we make no attempt to receive chunked-encoding bodies,
         # and we should do
-        @state=:recv_body 
+        l=@header['Content-Length']
+        if (l[0] && (l[0].to_i == 0)) then
+          # if content-length is present and 0 then we assume it's 
+          # a 204 No content, or something
+          @state=:idle
+        else
+          # if the header is missing altogether then body length is unknown
+          # and we just have to keep going until the peer hangs up
+          @state=:recv_body 
+        end
       end
     when :recv_body then
-      if @data.bytesize >= @headers['Content-Length'] then
-        process_body(@data)
-        @state=:idle
-        @tx=nil
+      if l=@header['Content-Length'] then
+        if l[0] && @data.bytesize >= l[0].to_i then
+          process_body(@data)
+          @state=:idle
+          @tx=nil
+        end
       end
     when :idle then
-      warn "Received data while in :idle state, what gives?"
+      u="unknown"
+      if @tx then u=@tx.request.uri end
+      warn "#{u} #{@header['Content-Encoding']} received #{data} while in :idle state, what gives?"
+    when :tls then
+      warn "Received data while in :tls, don't know if this is supposed to hapen"
     end
   end
   
   def unbind
+    if @state == :recv_body then
+      process_body(@data)
+      @state=:idle
+    end
     unless @state == :idle
       warn "Unexpected connection close by peer"
     end
