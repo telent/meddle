@@ -51,3 +51,7 @@ we want to sustain load for ten or twenty minutes to eliminate "ramp
 up" effects on a server: do our data structures allow that?
 
 
+9) if the original session asked for gzip content-encoding and the
+server provided it, we should probably do the same (and do).  However
+it would be good to provide tools for anyone testing body content to
+know that the *correct* gzipped content had been delivered
