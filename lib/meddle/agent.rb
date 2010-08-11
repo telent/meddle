@@ -11,7 +11,6 @@ class Meddle::Agent
     now=Time.now
     @sessions.each do |sess,delay|
       queue=Hash.new {|hash,k| hash[k]=Meddle::Queue.new }
-      sess_orig_start=sess[0].start_time
       sess.each do |tx|
         host=URI.parse(tx.request.uri).host
         queue[host].push [now+(tx.start_time-sess[0].start_time)+delay,tx]
