@@ -2,20 +2,11 @@
 
 1) update/write the docs
 
-3) track connections so we can stop when we're finished
-- the Session should know when all Connections die; the Agent should
-  know when Sessions are finished
-- there should also be a timeout somewhere in case a request gets stuck.
-  timeout behaviour is not well-defined anyway
+3) better connection tracking so we can stop when we're finished
+3b) per-request timeouts when server is not responding
 
-4) test that the response is what we expect. 
-
-The original XML doesn't log body contents, so we can't compare
-against body text, just headers.
-
-A default test might be to compare http status and content-type, which
-should be sufficient to detect real brokenness.  There needs to be a
-sane way to override that
+4) default check_response_header could do something useful (such as
+comparing http status and content-type with the recorded script)
 
 5) There is a limit on the number of timers available
 set_max_timers(ct).  
@@ -50,34 +41,23 @@ always know the full set of requests before EM.run is called?  Perhaps
 we want to sustain load for ten or twenty minutes to eliminate "ramp
 up" effects on a server: do our data structures allow that?
 
-9) if the original session asked for gzip content-encoding and the
-server provided it, we should probably do the same (and do).  However
-it would be good to provide tools for anyone testing body content to
-know that the *correct* gzipped content had been delivered
-
 10) socket options - try to get approximately the same TCP behaviour as the 
 orginal requests would have had
 
-11) we send an http/1.0 request but handle the response mostly as if it were
-1.1 (chunking excepted) - e.g. we default to persistent connects.  
+11) we send an http/1.0 request but handle the response mostly as if
+it were 1.1 (chunking excepted) - e.g. we default to persistent
+connects.  We should send the same http version that was in the
+script, and we should behave accordingly
 
 12) It would be instructve to know whether real browsers always open
-two sockets/host or just one - when do they decide the second pipe is needed?
+two sockets/host or just one - when do they decide the second pipe is
+needed?  It's a little bizarre to see the cs being fetched before teh
+html tht refers to it.
 
 13) we don't have the standard "block all connections while
 downloading a script" behaviour, though maybe that's not a real big
 deal as the delays in the original request will simulate it more or
 less - until the site gets slow.
-
-14) queue.pop raises error on empty, which get_next_request is not
-expecting.  return nil?
-
-15) we also need some switches to control verbosity as there's far too
-much spew in the output for load testing
-
-16) my laptop is currently eating 8s of cpu for one minute of 50 users
-=> about 400 users to max the cpu.  We need the facilities to test for
-4000, so if we can run at 10x this speed, job done
 
 18) munge_request should not alter the request in-place because it
 will break other users running the same session.  Perhaps instead we
