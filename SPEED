@@ -1,0 +1,38 @@
+This is eventually, I hope, going to be used for load testing a real
+web site.  To that end, it would be nice if it doesn't need ten times
+as many resources on the client as the server because that would be
+uneconomical.
+
+Here are some considerations
+
+1) my laptop is currently eating 8s of cpu for one minute of 50 users
+=> about 400 users to max the cpu.  We need the facilities to test for
+4000, so if we can run at 10x this speed, job done.  Need to get the 
+profiler out at some point.
+
+
+2) There is a limit on the number of timers available in EventMachine
+
+set_max_timers(ct).  
+
+"Sets the maximum number of timers and periodic timers that may be
+outstanding at any given time. You only need to call set_max_timers if
+you need more than the default number of timers, which on most
+platforms is 1000. Call this method before calling EventMachine#run."
+
+From the source:
+ /* Allow a user to increase the maximum number of outstanding timers.
+  * If this gets "too high" (a metric that is of course platform dependent),
+  * bad things will happen like performance problems and possible overuse
+  * of memory.
+  * The actual timer mechanism is very efficient so it's hard to know what
+  * the practical max, but 100,000 shouldn't be too problematical.
+  */
+
+We are using C_H (default 2) connections per host per session.
+Between requests each connection requires a single timer.  So if we
+are hitting a single host our timer use is basically 2x the number of
+sessions.  If 1000 is a bottleneck before CPU becomes an issue,
+100,000 probably won't be, but we should know how many we're going to
+need and advise the user if it needs raising
+
