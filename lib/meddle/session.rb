@@ -58,6 +58,14 @@ class Meddle::Session
     end
   end
 
+  # if you are getting responses full of binary guck instead of the 
+  # plain text you were hoping for, one possibility is that the 
+  # original browsing session was between a client and server that
+  # support gzip or deflate compression.  Your options are either
+  # to remove Accept-Encoding from the request headers before sending
+  # (see #munge_headers) or for a more realistic test use Zlib::Inflate
+  # or similar to decompress it yourself.
+
   def check_response_body(tx,status,h,b)
     l= h['Content-Length']
     if l[0] && (l[0] != b.bytesize)
