@@ -11,14 +11,18 @@
 
 class Meddle::Connection < EM::Connection
 
-  def self.start(queue,options={})
-    uri=URI.parse(queue.peek[1].request.uri)
-    EM.connect(uri.host,uri.port,self,options.merge(:queue=>queue))
+  def self.start(queue,session,options={})
+    time,tx=queue.peek
+    if tx then
+      uri=URI.parse(tx.request.uri)
+      EM.connect(uri.host,uri.port,self,options.merge(:queue=>queue,:session=>session))
+    end
   end
 
   def initialize *args
     o=args[0]
     @queue=o[:queue]
+    @session=o[:session]
     @persistent_request_timeout=o[:persistent_request_timeout] || 150
     @state=:idle
     super
@@ -47,6 +51,7 @@ class Meddle::Connection < EM::Connection
   def send_next_request
     run_time,tx=@queue.pop
     if tx.nil?
+      warn "queue empty"
       close_connection    
     else
       delay=run_time-Time.now
@@ -68,6 +73,11 @@ class Meddle::Connection < EM::Connection
   end
 
   def send_request(tx)
+    tx=@session.munge_request(tx)
+    if tx.nil? then 
+#      warn "send_request #{tx.request.uri} filtered"
+      return self.send_next_request
+    end
     @state=:sending
     @tx=tx
     r=tx.request
@@ -106,13 +116,12 @@ class Meddle::Connection < EM::Connection
     @state=:waiting
   end
 
-  def process_body(body)
-    warn "Received #{body.bytesize} octets of body content"
+  def process_body
+    @session.check_response_body(@tx,@http_status,@header,@body)
   end
 
-  def process_header(header)
-    status=header[:http_status]
-    warn "#{@tx.request.method} #{@tx.request.uri} #{status[1]} #{header['Content-Length'][0] or "<length unknown>"}"
+  def process_header
+    @session.check_response_header(@tx,@http_status,@header)
   end
 
   def receive_data(data)
@@ -126,16 +135,15 @@ class Meddle::Connection < EM::Connection
       if end_headers then 
         header_text=@data.slice(0,end_headers)
         @data=@data.slice(end_headers+4,@data.length)
-        status=[]
+        @http_status=[]
         StringIO.open(header_text,"r") do |fin|
-          status=fin.readline.chomp.split(/ /,3) 
+          @http_status=fin.readline.chomp
           while (line=fin.gets) 
             k,v=line.split(/:/)
             v and @header[k] << v.chomp.strip
           end
         end
-        @header[:http_status]=status
-        process_header(@header)
+        self.process_header
         # XXX we make no attempt to receive chunked-encoding bodies,
         # and we should do
         l=@header['Content-Length']
@@ -157,7 +165,7 @@ class Meddle::Connection < EM::Connection
     when :rx_body then
       l=@header['Content-Length']
       if l[0] && (@data.bytesize >= l[0].to_i) then
-        process_body(@data)
+        self.process_body
         @state=:idle
         @tx=nil
         self.send_next_request
@@ -175,7 +183,7 @@ class Meddle::Connection < EM::Connection
   
   def unbind
     if @state == :rx_body then
-      process_body(@data)
+      self.process_body
       @state=:idle
     end
     unless @state == :idle
@@ -184,7 +192,7 @@ class Meddle::Connection < EM::Connection
     run_time,tx=@queue.peek
     if tx then
       EM.add_timer (run_time-Time.now) {
-        Meddle::Connection.start(@queue,
+        Meddle::Connection.start(@queue,@session,
                                  :persistent_request_timeout=>@persistent_request_timeout)
       }
     end

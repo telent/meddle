@@ -72,3 +72,13 @@ less - until the site gets slow.
 14) queue.pop raises error on empty, which get_next_request is not
 expecting.  return nil?
 
+15) we also need some switches to control verbosity as there's far too
+much spew in the output for load testing
+
+16) my laptop is currently eating 8s of cpu for one minute of 50 users
+=> about 400 users to max the cpu.  We need the facilities to test for
+4000, so if we can run at 10x this speed, job done
+
+18) munge_request should not alter the request in-place because it
+will break other users running the same session.  Perhaps instead we
+should return a new set of request headers, or something

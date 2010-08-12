@@ -1,5 +1,6 @@
 
 class Meddle::Session 
+  attr_accessor :agent
   include Enumerable
   def each(&blck)
     @transactions.each(&blck)
@@ -8,19 +9,60 @@ class Meddle::Session
     @transactions[index]
   end
 
-  # new accepts a block which is called for each transaction. It may
-  # change the request (headers, body) as it wishes and return the
-  # modified version, or may return a falsey value to discard this
-  # transaction from the session.  
+  # This method takes a block that it yields to for each transaction,
+  # which may change the request (headers, body) as it wishes and
+  # return the modified version, or may return a falsey value to
+  # discard this transaction from the session.  Note that the block
+  # runs at the start of the test session so is useful only for
+  # "constant" changes - it cannot modify later requests in the light
+  # of responses from earlier ones, because the earlier ones have not
+  # yet happened.
 
   # Discarding transactions may be useful for example if the session
   # includes requests to hosts other than the hosts under test (e.g.
   # google analytics)
-  def initialize(file)
+
+  # See also #munge_request 
+
+  def self.script_file(file)
     doc=File.open(file) do |f|
       Nokogiri::XML(f)
     end
     txs=doc.root.css('tdRequest').map {|x| Meddle::Transaction.from_xml(x)}
-    @transactions=txs.map { |tx| (yield tx) || nil }.reject(&:nil?)
+    @transactions=txs.map { |tx| yield (tx) || nil }.reject(&:nil?)
   end
+  class << self; attr_reader :transactions; end
+
+  def initialize
+    @transactions=self.class.transactions
+  end
+
+  # This runs when the request is due to be sent, so stored data from
+  # earlier requests (e.g. the values of Set-Cookie headers) can be
+  # sent using munge_request on later requests.
+  
+  # If your application requires runtime efficiency, your #munge_request 
+  # method should be runtime-efficient :-)
+  
+  def munge_request(tx)
+    warn tx.request.uri
+    tx
+  end
+
+  def check_response_header(tx,status,h)
+    code= status.split(/ /)[1].to_i
+    if code >=400  then
+      warn "\n#{tx.request.uri} #{status}"
+    else
+      $stderr.print "/"
+    end
+  end
+
+  def check_response_body(tx,status,h,b)
+    l= h['Content-Length']
+    if l[0] && (l[0] != b.bytesize)
+      warn "received #{b.bytesize} body bytes, expecting l[0]"
+    end
+  end
+
 end

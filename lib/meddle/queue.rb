@@ -7,8 +7,8 @@ class Meddle::Queue
   def peek
     @data[0]
   end
-  def pop
-    @data.shift or raise "pop on empty queue"
+  def pop(default=nil)
+    @data.shift or default
   end
   def push(v)
     @data.push(v)
