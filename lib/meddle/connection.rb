@@ -117,7 +117,7 @@ class Meddle::Connection < EM::Connection
   end
 
   def process_body
-    @session.check_response_body(@tx,@http_status,@header,@body)
+    @session.check_response_body(@tx,@http_status,@header,@data)
   end
 
   def process_header
