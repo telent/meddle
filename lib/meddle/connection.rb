@@ -172,7 +172,11 @@ class Meddle::Connection < EM::Connection
         self.process_body
         @state=:idle
         @tx=nil
-        self.send_next_request
+        if @header['Connection'][0] == 'close' then
+          self.close_connection
+        else 
+          self.send_next_request
+        end
       end
     when :idle then
       u="unknown"
