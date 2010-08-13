@@ -195,7 +195,7 @@ class Meddle::Connection < EM::Connection
       @state=:idle
     end
     unless @state == :idle
-      warn "Unexpected connection close by peer"
+      warn "Unexpected connection close by peer in state #{@state}"
     end
     run_time,tx=@queue.peek
     if tx then
