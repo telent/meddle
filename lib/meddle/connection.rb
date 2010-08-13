@@ -14,7 +14,7 @@ class Meddle::Connection < EM::Connection
   def self.start(queue,session,options={})
     time,tx=queue.peek
     if tx then
-      uri=URI.parse(tx.request.uri)
+      uri=tx.request.uri
       EM.connect(uri.host,uri.port,self,options.merge(:queue=>queue,:session=>session))
     end
   end
@@ -30,7 +30,7 @@ class Meddle::Connection < EM::Connection
   
   def post_init
     begin
-      uri=URI.parse(@queue.peek[1].request.uri )
+      uri=@queue.peek[1].request.uri 
       if uri.scheme.upcase == "HTTPS" then
         @state=:tls
         start_tls
@@ -81,7 +81,7 @@ class Meddle::Connection < EM::Connection
     @state=:sending
     @tx=tx
     r=tx.request
-    uri=URI.parse(r.uri)
+    uri=r.uri
     p=uri.path
     if q=uri.query then
       p << "?" << q

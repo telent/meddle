@@ -11,7 +11,7 @@ module Meddle
   end
   
   class Request < Message
-    attr_accessor :uri,:method
+    attr_accessor :uri,:method,:uri_text
   end
   
   class Response < Message
@@ -43,7 +43,16 @@ module Meddle
         "#{k}=#{v.join}"          # XXX doesn't work if multiple fields with
       end.join("&")               # same name
       
-      self.new(:request=>Request.new(:uri=>(URI::unescape(node['uri'])),
+      url=URI::unescape(node['uri'])
+      url_parsed=
+        begin 
+          URI.parse(url)
+        rescue URI::InvalidURIError
+          URI.parse('about:badurl')
+        end
+
+      self.new(:request=>Request.new(:uri=>url_parsed,
+                                     :uri_text=>url,
                                      :method=>kid(node,'tdRequestMethod'),
                                      :header=>read_headers(rq_headers),
                                      :body=>body),

@@ -1,11 +1,12 @@
 require 'meddle'
+require 'ruby-prof'
 
 class BasketPurchase < Meddle::Session
   script_file "rq-registered-success.xml" do |tx|
     r=tx.request
     h=r.header["Host"]
     if h[0] == "www.dev.stargreen.com" then
-      r.uri.gsub!(/www.dev.stargreen.com/,"localhost.stargreen.com")
+      r.uri.host="localhost.stargreen.com"
       r.header["Host"]=["localhost.stargreen.com"]
       tx
     end

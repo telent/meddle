@@ -14,7 +14,7 @@ class Meddle::Agent
     @sessions.each do |sess,delay|
       queue=Hash.new {|hash,k| hash[k]=Meddle::Queue.new }
       sess.each do |tx|
-        host=URI.parse(tx.request.uri).host
+        host=tx.request.uri.host
         tx_time=now+(tx.start_time-sess[0].start_time)+delay
         queue[host].push [tx_time,tx]
         if tx_time > @finish_time then @finish_time=tx_time end
