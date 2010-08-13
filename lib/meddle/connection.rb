@@ -123,6 +123,19 @@ class Meddle::Connection < EM::Connection
   def process_header
     @session.check_response_header(@tx,@http_status,@header)
   end
+  
+  def parse_headers(end_headers)
+    header_text=@data.slice(0,end_headers)
+    @data=@data.slice(end_headers+4,@data.length)
+    @http_status=[]
+    StringIO.open(header_text,"r") do |fin|
+      @http_status=fin.readline.chomp
+      while (line=fin.gets) 
+        k,v=line.split(/:/)
+        v and @header[k] << v.chomp.strip
+      end
+    end
+  end
 
   def receive_data(data)
     if @state==:waiting then @state=:rx_header end
@@ -133,16 +146,7 @@ class Meddle::Connection < EM::Connection
       # no body?  must check
       end_headers=@data.index("\r\n\r\n") 
       if end_headers then 
-        header_text=@data.slice(0,end_headers)
-        @data=@data.slice(end_headers+4,@data.length)
-        @http_status=[]
-        StringIO.open(header_text,"r") do |fin|
-          @http_status=fin.readline.chomp
-          while (line=fin.gets) 
-            k,v=line.split(/:/)
-            v and @header[k] << v.chomp.strip
-          end
-        end
+        parse_headers(end_headers)
         self.process_header
         # XXX we make no attempt to receive chunked-encoding bodies,
         # and we should do
