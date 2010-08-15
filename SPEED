@@ -38,20 +38,8 @@ need and advise the user if it needs raising
 URI.parse is quite possibly an easy speed-up. Meddle::Connection
 #parse_headers might be good to look at too.
 
-3) Here is ruby-prof output:
 
- %self     total     self     wait    child    calls  name
- 29.06      0.24     0.59     0.00     0.16    49900  EventMachine::Connection#send_data
- 28.57      0.15     0.58     0.00     0.00    49900  <Module::EventMachine>#send_data
- 23.65      0.56     0.48     0.00     0.36     9164  URI::Generic#initialize
- 21.18      1.43     0.43     0.00     1.42    46762  Array#each
- 19.70      0.00     0.40     0.00     0.00     6608  Meddle::Connection#parse_headers
- 18.23      0.00     0.37     0.00     0.00    15613  Meddle::Connection#receive_data
- 14.29      0.00     0.29     0.00     0.00    34040  String#split
- 14.29      0.30     0.29     0.00     0.30       95  Kernel#require
- 11.33      0.40     0.23     0.00     0.39     3600  Meddle::Connection#send_request
- 11.33      0.30     0.23     0.00     0.24     4670  Hash#each
- 10.84      0.00     0.22     0.00     0.00    42469  Hash#[]=
-  9.36      0.05     0.19     0.00     0.00      982  <Module::EventMachine>#connect_server
-  9.36      1.31     0.19     0.00     1.28    14351  Class#new
-  8.87      0.17     0.18     0.00     0.11     9164  URI::Parser#split
+3) We attempt to remain reasonably parsimonious in memory usage - for
+example, we keep one copy of the data structure created by the XML
+instead of creating one copy per concurrent session
+
