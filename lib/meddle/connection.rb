@@ -75,7 +75,6 @@ class Meddle::Connection < EM::Connection
   def send_request(tx)
     tx=@session.munge_request(tx)
     if tx.nil? then 
-#      warn "send_request #{tx.request.uri} filtered"
       return self.send_next_request
     end
     @state=:sending
