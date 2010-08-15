@@ -64,7 +64,11 @@ class Meddle::Session
   # support gzip or deflate compression.  Your options are either
   # to remove Accept-Encoding from the request headers before sending
   # (see #munge_headers) or for a more realistic test use Zlib::Inflate
-  # or similar to decompress it yourself.
+  # or similar to decompress it yourself.  
+
+  # If you are testing the ETag headers returned by the server, note
+  # that changing the Accept-Encoding header is likely to change them.
+  # See e.g. http://httpd.apache.org/docs/2.2/mod/core.html#fileetag
 
   def check_response_body(tx,status,h,b)
     l= h['Content-Length']
