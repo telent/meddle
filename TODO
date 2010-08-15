@@ -12,11 +12,6 @@ comparing http status and content-type with the recorded script)
 tests we should replace it with something simpler.  Note that http
 headers are all US-ASCII - we don't need to worry about utf-8 or anything
 
-8) Will there ever be a need to add new events on the fly or do we
-always know the full set of requests before EM.run is called?  Perhaps
-we want to sustain load for ten or twenty minutes to eliminate "ramp
-up" effects on a server: do our data structures allow that?
-
 10) socket options - try to get approximately the same TCP behaviour as the 
 orginal requests would have had
 
@@ -28,7 +23,7 @@ script, and we should behave accordingly
 12) It would be instructve to know whether real browsers always open
 two sockets/host or just one - when do they decide the second pipe is
 needed?  It's a little bizarre to see the cs being fetched before teh
-html tht refers to it.
+html that refers to it.
 
 13) we don't have the standard "block all connections while
 downloading a script" behaviour, though maybe that's not a real big
@@ -38,3 +33,12 @@ less - until the site gets slow.
 18) munge_request should not alter the request in-place because it
 will break other users running the same session.  Perhaps instead we
 should return a new set of request headers, or something
+
+19) two connections/browser/hostname: we have rigged this slightly,
+because we do not close the http sockets for a session when it starts
+making https requests - need to find out what real browsers do.  
+
+Since mixed content is frowned on, chances are we're only using one
+pair or the other and the difference only becmoes apparent if a
+connection switches to https and back again before the old http
+connections are timed-out.  But it would be good to do it properly
