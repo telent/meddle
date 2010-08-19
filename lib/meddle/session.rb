@@ -29,7 +29,9 @@ class Meddle::Session
       Nokogiri::XML(f)
     end
     txs=doc.root.css('tdRequest').map {|x| Meddle::Transaction.from_xml(x)}
-    @transactions=txs.map { |tx| yield (tx) || nil }.reject(&:nil?)
+    @transactions=txs.map do |tx|
+      yield (tx) and tx
+    end.reject(&:nil?)
   end
   class << self; attr_reader :transactions; end
 
@@ -45,8 +47,7 @@ class Meddle::Session
   # method should be runtime-efficient :-)
   
   def munge_request(tx)
-    warn tx.request.uri
-    tx
+    [tx.request.header,tx.request.body]
   end
 
   def check_response_header(tx,status,h)
@@ -54,7 +55,7 @@ class Meddle::Session
     if code >=400  then
       warn "\n#{tx.request.uri} #{status}"
     else
-      $stderr.print "/"
+      $stderr.print "."
     end
   end
 

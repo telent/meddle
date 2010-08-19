@@ -9,41 +9,57 @@ opts=Trollop::options do
   opt :profile_graph, "Profile output file", :default=>"callgraph.prof"
 end
 
-opts[:profile] and require 'ruby-prof'
+if opts[:profile] then
+  require 'ruby-prof'
+#  RubyProf.measure_mode= RubyProf::CPU_TIME
+end
 
 class BasketPurchase < Meddle::Session
   script_file "rq-registered-success.xml" do |tx|
     r=tx.request
-    h=r.header["Host"]
-    if h[0] == "www.dev.stargreen.com" then
-      r.uri.host="localhost.stargreen.com"
-      r.header["Host"]=["localhost.stargreen.com:#{r.uri.port}"]
-      tx
+    r.header==r.header.map do |l|
+      if (l.index /^Hostp: www.dev.stargreen.com/i) then
+        r.uri.host="localhost.stargreen.com"
+        "Host: localhost.stargreen.com:#{r.uri.port}"
+      else l end
     end
+    if r.uri.host=="www.dev.stargreen.com" then tx end
   end
-
+  
   def munge_request(tx) 
-    r=tx.request
-    r.header["Cookie"]=[@cookie].compact
-    r.header.delete "Accept-Encoding"
-    if r.uri.path.match /checkout/ then
-      warn r.body
-    end
-    tx
+    header,body=super
+    ct="Content-Length: #{body.bytesize}"
+    ct_found=false
+    header=header.map {|l| 
+      case
+      when (l.index /^Cookie: /i) then "Cookie: #{@cookie}" 
+        
+        # if you want to check the response body, you might want the server
+        # not to send it in gzipped encoding
+      #when (l.index /^Accept-Encoding: /i) then nil
+        
+        # we may have frobbed the content length, so recalc
+      when (l.index /^Content-Length: /i) then
+        ct_found=true; ct 
+      else l 
+      end
+    }.reject(&:nil?)
+    unless ct_found then header << ct end
+    [header,body]
   end
 
   def check_response_header(tx,status,header)
-#    super
     if(l=header['Set-Cookie'][0]) then
       @cookie=(l.split /;/)[0]
-      warn "got cookie! #{@cookie}"
+      #warn "got cookie! #{@cookie}"
     end
     $stderr.print "."
   end
   def check_response_body(tx,status,header,body)
     ct=header['Content-Type']    
     begin
-      if ct[0].index('text/html') and (status.split[1].to_i < 400) then
+      if false and
+          ct[0].index('text/html') and (status.split[1].to_i < 400) then
         body.scan( %r{<TITLE.+?>(.+?)<} ) do |w|
           warn "#{tx.request.uri.to_s} #{ct[0]} #{w[0]}"
         end
@@ -67,7 +83,12 @@ if opts[:dry_run] then
   exit 0
 end
 
-srand()
+# let's have a repeatable run if we're profiling
+if opts[:profile] then
+  srand(opts[:num_clients])
+else
+  srand()
+end
 
 begin
   EM.run do

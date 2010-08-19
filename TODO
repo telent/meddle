@@ -30,10 +30,6 @@ downloading a script" behaviour, though maybe that's not a real big
 deal as the delays in the original request will simulate it more or
 less - until the site gets slow.
 
-18) munge_request should not alter the request in-place because it
-will break other users running the same session.  Perhaps instead we
-should return a new set of request headers, or something
-
 19) two connections/browser/hostname: we have rigged this slightly,
 because we do not close the http sockets for a session when it starts
 making https requests - need to find out what real browsers do.  
@@ -42,3 +38,7 @@ Since mixed content is frowned on, chances are we're only using one
 pair or the other and the difference only becmoes apparent if a
 connection switches to https and back again before the old http
 connections are timed-out.  But it would be good to do it properly
+
+20) either I don't understand how to read the profiler output or EM is
+fucking it up.  or both
+

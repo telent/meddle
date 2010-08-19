@@ -5,9 +5,14 @@ uneconomical.
 
 Here are some considerations
 
-1) my laptop is currently eating 8s of cpu for one minute of 50 users
-=> about 400 users to max the cpu.  We need the facilities to test for
-4000, so if we can run at 10x this speed, job done. 
+1) 
+Mon Aug 9th: my laptop is currently eating 8s of cpu for one minute of
+50 users => about 400 users to max the cpu.  We need the facilities to
+test for 4000, so if we can run at 10x this speed, job done.
+
+Mon Aug 16 : my laptop eats 30 seconds cpu per 2 minutes real, for
+100 sessions (This seems to be enough to kill the server ... oops).
+This is unchanged, in short.
 
 
 2) There is a limit on the number of timers available in EventMachine
@@ -42,4 +47,5 @@ URI.parse is quite possibly an easy speed-up. Meddle::Connection
 3) We attempt to remain reasonably parsimonious in memory usage - for
 example, we keep one copy of the data structure created by the XML
 instead of creating one copy per concurrent session
+
 

@@ -28,20 +28,18 @@ module Meddle
     end
 
     def self.read_headers(nodeset)
-      headers=Hash.new {|hash,key| hash[key]=[] }
-      nodeset.each do |n|
-        headers[URI::unescape(n['name'])].
-          push(URI::unescape(n.child.content.strip))
+      nodeset.map do |n|
+        URI::unescape(n['name']) + ": " +
+          URI::unescape(n.child.content.strip)
       end
-      headers
     end
     
     def self.from_xml(node)
       rq_headers=node.css('tdRequestHeaders tdRequestHeader')
       rs_headers=node.css('tdResponseHeaders tdResponseHeader')
-      body=read_headers(node.css('tdPostElements tdPostElement')).map do |k,v|
-        "#{k}=#{v.join}"          # XXX doesn't work if multiple fields with
-      end.join("&")               # same name
+      body=node.css('tdPostElements tdPostElement').map { |n|
+        [URI::unescape(n['name']),URI::unescape(n.child.content.strip)].join "="
+      }.join("&")         
       
       url=URI::unescape(node['uri'])
       url_parsed=
@@ -50,11 +48,11 @@ module Meddle
         rescue URI::InvalidURIError
           URI.parse('about:badurl')
         end
-
+      headers=read_headers(rq_headers)
       self.new(:request=>Request.new(:uri=>url_parsed,
                                      :uri_text=>url,
                                      :method=>kid(node,'tdRequestMethod'),
-                                     :header=>read_headers(rq_headers),
+                                     :header=>headers,
                                      :body=>body),
                # if we're discarding detail that a client might want, 
                # we do at least save the original node xpath so they can 

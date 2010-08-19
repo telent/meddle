@@ -39,6 +39,7 @@ class Meddle::Connection < EM::Connection
       end
     rescue Exception => e
       warn e
+      warn e.backtrace
       raise e
     end
   end
@@ -51,7 +52,6 @@ class Meddle::Connection < EM::Connection
   def send_next_request
     run_time,tx=@queue.pop
     if tx.nil?
-      warn "queue empty"
       close_connection    
     else
       delay=run_time-Time.now
@@ -73,8 +73,8 @@ class Meddle::Connection < EM::Connection
   end
 
   def send_request(tx)
-    tx=@session.munge_request(tx)
-    if tx.nil? then 
+    header,body=@session.munge_request(tx)
+    if header.nil? then 
       return self.send_next_request
     end
     @state=:sending
@@ -90,24 +90,12 @@ class Meddle::Connection < EM::Connection
     # gives us chunked bodies that we're not expecting.  This needs
     # fixed
     send_data "#{r.method.upcase} #{p} HTTP/1.0\r\n" 
-    h=r.header
-
-    # recalculate the request content length: it may have changed if
-    # user code has altered the body, or if Firefox was chunking (we
-    # don't do request chunking) or if reconstituting the body from
-    # XML has caused it to change length
-    h["Content-Length"]=[r.body.bytesize.to_s]
-
-    # it might be nice to have a configuration option that would 
-    # disable persistent connections
-#    h["Connection"]=["close"]
-    h.each do |k,v|
-      v.each do |v|
-        send_data "#{k}: #{v}\r\n"
-      end
-    end
-    send_data "\r\n"
+ 
+    send_data header.join("\r\n")
+    send_data "\r\n\r\n"
     if(["POST","PUT"].member?(r.method)) then
+      # XXX is this the right test?  perhaps we should send the body if there
+      # is one irrespective of method
       send_data r.body
       end
     @data=''
@@ -127,11 +115,13 @@ class Meddle::Connection < EM::Connection
     header_text=@data.slice(0,end_headers)
     @data=@data.slice(end_headers+4,@data.length)
     @http_status=[]
+    # profiling says that StringIO is much faster than I was expecting
+    # (i.e. basically negligible CPU use). which is nice
     StringIO.open(header_text,"r") do |fin|
       @http_status=fin.readline.chomp
       while (line=fin.gets) 
-        k,v=line.split(/:/)
-        v and @header[k] << v.chomp.strip
+        k,v=line.split(": ")
+        v and @header[k] << v.chomp
       end
     end
   end
